@@ -1,6 +1,15 @@
 <resources>
-    <string name="app_name">My Weather2</string>
+    <string name="app_name">My Weather</string>
     <string name="button">Button</string>
     <string name="editText_hint">Введите город</string>
-    <string name="editText_text" />
+    <string name="show_weather">show weather</string>
+    <string name="text_degree">+15</string>
+
+
+    <string name="fragment_text">t</string>
+    <string name="textview_city">London</string>
+    <string name="textView_humidity_text">Humidity</string>
+    <string name="textView_pressure_text">pressure</string>
+
+    <string name="search_title">Search for city</string>
 </resources>
