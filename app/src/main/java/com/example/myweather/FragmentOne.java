@@ -83,6 +83,7 @@ public class FragmentOne extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
        super.onCreate(savedInstanceState);
        weatherPoint(searchCity);
+       
     }
 
     private void searchCities(View v) {
