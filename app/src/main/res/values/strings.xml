@@ -12,4 +12,5 @@
     <string name="textView_pressure_text">pressure</string>
 
     <string name="search_title">Search for city</string>
+    <string name="downloading_data">Downloading your data ...</string>
 </resources>

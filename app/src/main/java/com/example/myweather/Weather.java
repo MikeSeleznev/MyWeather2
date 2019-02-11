@@ -1,19 +1,25 @@
 package com.example.myweather;
 
-import android.os.Handler;
-import android.util.Log;
-import android.view.View;
-import android.widget.EditText;
 
+import android.util.Log;
 import org.json.JSONObject;
 
-import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
 public class Weather {
-   static String text;
-   static String degrees;
+
+    private String lastUpdate;
+    private String city;
+    private String country;
+    private String humidity;
+    private String wind;
+    private static String text;
+    private static String degrees;
+    private String fragment_degree;
+
+    public String getCountry(){return country;}
 
     public static void weatherPoint(final String v){new Thread(){
         public void run(){
@@ -79,5 +85,46 @@ public class Weather {
 
         weatherPoint(text);
         return degrees;
+    }
+
+    public void setCity(String city){
+        this.city = city;
+    }
+
+    public String getCity(){
+       return this.city;
+    }
+
+    public void setLastUpdate(String lastUpdate){
+
+        this.lastUpdate = lastUpdate;
+    }
+
+    public String getLastUpdate(){
+        return  lastUpdate;
+    }
+
+    public void setHumidity(String humadity){
+        this.humidity = humadity;
+    }
+
+    public String getHumidity(){
+        return this.humidity;
+    }
+
+    public void setWind (String wind){
+        this.wind = wind;
+    }
+
+    public String getWind(){
+        return this.wind;
+    }
+
+    public void setFragment_degree (String degree){
+        this.fragment_degree = degree;
+    }
+
+    public String getFragment_degree(){
+        return  this.fragment_degree;
     }
 }

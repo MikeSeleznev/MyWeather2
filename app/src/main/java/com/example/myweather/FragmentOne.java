@@ -2,14 +2,15 @@ package com.example.myweather;
 
 
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.content.SharedPreferences;
 import android.graphics.Color;
-import android.graphics.Typeface;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.text.InputType;
 import android.util.Log;
@@ -21,37 +22,39 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
+
+import com.example.myweather.tasks.ParseResult;
+import com.example.myweather.tasks.RequestTask;
+import com.example.myweather.tasks.TaskOutput;
 
 import org.json.JSONObject;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.Locale;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 
 
 public class FragmentOne extends Fragment {
 
-    View rootView;
-    TextView textView;
-    TextView textView_fragment_degree;
-    TextView textView_Humidity;
-    TextView textView_wind;
-    TextView textView_city;
-    ImageView imageView_picture;
-    ImageButton imageButton;
-    static String text;
-    String iconUrl;
-    String searchCity = "";
+    Weather weatherToday = new Weather();
+
+    private View rootView;
+    private TextView textView_lastUpdate;
+    private TextView textView_fragment_degree;
+    private TextView textView_Humidity;
+    private TextView textView_wind;
+    private TextView textView_city;
+    private ImageView imageView_picture;
+    private ImageButton imageButton;
+    private static String text;
+    private String iconUrl;
+    private String searchCity = "Saint-Petersburg";
+    ProgressDialog progressDialog;
+    public String recentCityId = "";
+
 
     Handler handler;
 
-    public FragmentOne(){
+    public FragmentOne() {
         handler = new Handler();
     }
 
@@ -59,13 +62,13 @@ public class FragmentOne extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-       rootView = inflater.inflate(R.layout.fragment_fragment_one, container, false);
-       textView_city = (TextView) rootView.findViewById(R.id.textView_city);
-       textView_fragment_degree = (TextView) rootView.findViewById(R.id.textView_fragment_degree);
-       textView_Humidity = (TextView) rootView.findViewById(R.id.textView_Humidity);
-       textView_wind = (TextView) rootView.findViewById(R.id.textView_wind);
-       imageView_picture = (ImageView) rootView.findViewById(R.id.imageView_picture);
-       imageButton = (ImageButton) rootView.findViewById(R.id.imageButton_fragment);
+        rootView = inflater.inflate(R.layout.fragment_fragment_one, container, false);
+        textView_city = (TextView) rootView.findViewById(R.id.textView_city);
+        textView_fragment_degree = (TextView) rootView.findViewById(R.id.textView_fragment_degree);
+        textView_Humidity = (TextView) rootView.findViewById(R.id.textView_Humidity);
+        textView_wind = (TextView) rootView.findViewById(R.id.textView_wind);
+        imageButton = (ImageButton) rootView.findViewById(R.id.imageButton_fragment);
+        textView_lastUpdate = (TextView) rootView.findViewById(R.id.textView_lastUpdate);
 
         imageButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -78,16 +81,96 @@ public class FragmentOne extends Fragment {
     }
 
 
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
-       super.onCreate(savedInstanceState);
-       weatherPoint(searchCity);
-       
+        super.onCreate(savedInstanceState);
+        progressDialog = new ProgressDialog(getContext());
+
     }
 
+    @Override
+    public void onStart() {
+        super.onStart();
+        preloadWeather();
+        //updateWeatherOnStart();
+        //weatherPoint(searchCity);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        //updateWeatherOnStart();
+    }
+
+
+
+    private void updateWeatherOnStart() {
+        try {if (weatherToday.getCountry().isEmpty()){
+            preloadWeather();
+            return;
+        }
+
+        } catch (Exception e){
+            preloadWeather();
+            return;
+        }
+
+    }
+
+    private void preloadWeather() {
+       SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getContext());
+        //searchCity = sp.getString("lastToday", "");
+       String lastToday = sp.getString("lastToday", "");
+        if (!lastToday.isEmpty()) {
+         RequestTask rTask = new TodayWeatherTask(lastToday, FragmentOne.this, weatherToday, progressDialog);//new RequestTask(lastToday, FragmentOne.this, weatherToday, progressDialog);
+         rTask.execute();
+
+         //setWeatherData();
+        //result = rTask.get();
+        }
+
+        /*
+        String lastLongterm = sp.getString("lastLongterm", "");
+        if (!lastLongterm.isEmpty()) {
+            new LongTermWeatherTask(this, this, progressDialog).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "cachedResponse", lastLongterm);
+        }*/
+
+
+    }
+
+    class TodayWeatherTask extends RequestTask {
+
+        public TodayWeatherTask(String json, FragmentOne activity, Weather weatherToday, ProgressDialog progressDialog) {
+            super(json, activity, weatherToday, progressDialog);
+        }
+
+        @Override
+        protected void onPreExecute() {
+            loading = 0;
+            super.onPreExecute();
+        }
+
+        @Override
+        protected void onPostExecute(String output) {
+            super.onPostExecute(output);
+            setWeatherData();
+        }
+    }
+
+
+    private void setWeatherData() {
+
+        textView_city.setText(weatherToday.getCity());
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("E yyyy.MM.dd 'и время' hh:mm:ss a zzz");
+        textView_lastUpdate.setText(weatherToday.getLastUpdate());
+        textView_Humidity.setText(weatherToday.getHumidity());
+        textView_wind.setText(weatherToday.getWind());
+        textView_fragment_degree.setText(weatherToday.getFragment_degree());
+    }
+
+
     private void searchCities(View v) {
-       Context context = v.getContext();
+        Context context = v.getContext();
         AlertDialog.Builder alert = new AlertDialog.Builder(context);
         alert.setTitle(context.getString(R.string.search_title));
         final EditText input = new EditText(context);
@@ -115,13 +198,7 @@ public class FragmentOne extends Fragment {
             }
         });
 
-        AlertDialog alertCreate =  alert.create();
-        alertCreate.show();
-        Button nbutton = alertCreate.getButton(DialogInterface.BUTTON_NEGATIVE);
-        nbutton.setBackgroundColor(Color.MAGENTA);
-        Button pbutton = alertCreate.getButton(DialogInterface.BUTTON_POSITIVE);
-        pbutton.setBackgroundColor(Color.YELLOW);
-        //alert.show();
+        alert.show();
 
     }
 
@@ -138,7 +215,7 @@ public class FragmentOne extends Fragment {
             else {
                 handler.post(new Runnable(){
                     public void run(){
-                        renderWeather(json);}
+                       ParseResult result = renderWeather(json.toString());}
                     });
         }
     }
@@ -146,11 +223,13 @@ public class FragmentOne extends Fragment {
 
     }
 
-    private void renderWeather(JSONObject json) {
+    private ParseResult renderWeather(String result) {
 
         try {
+            JSONObject json = new JSONObject(result);
             JSONObject main = json.getJSONObject("location");
             textView_city.setText(main.getString("name"));
+            //textView_city.setText(weatherToday.getCity());
 
             JSONObject current = json.getJSONObject("current");
             textView_fragment_degree.setText(current.getString("temp_c"));
@@ -194,10 +273,13 @@ public class FragmentOne extends Fragment {
                     json.getJSONObject("sys").getLong("sunrise") * 1000,
                     json.getJSONObject("sys").getLong("sunset") * 1000);*/
 
+           SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(getContext()).edit();
+           editor.putString("lastToday", json.toString());
+           editor.commit();
         }catch(Exception e){
             Log.e("SimpleWeather", "One or more fields not found in the JSON data");
         }
-
+            return ParseResult.OK;
     }
 
     private void bad(){
@@ -206,7 +288,11 @@ public class FragmentOne extends Fragment {
     }
 
 
-
+    public static long saveLastUpdateTime(SharedPreferences sp) {
+        Calendar now = Calendar.getInstance();
+        sp.edit().putLong("lastUpdate", now.getTimeInMillis()).commit();
+        return now.getTimeInMillis();
+    }
 
 
 

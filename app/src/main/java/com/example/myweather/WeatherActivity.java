@@ -12,16 +12,13 @@ import android.widget.TextView;
 
 public class WeatherActivity extends AppCompatActivity {
 
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-       setContentView(R.layout.weather_activity);
-      // Button button = findViewById(R.id.button);
-      // button.setOnClickListener(onClickListener);
+        setContentView(R.layout.weather_activity);
 
-       Fragment fragment = null;
+
+        Fragment fragment = null;
         fragment = new FragmentOne();
         FragmentManager fm = getSupportFragmentManager();
         FragmentTransaction ft = fm.beginTransaction();
@@ -33,15 +30,7 @@ public class WeatherActivity extends AppCompatActivity {
     View.OnClickListener onClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-           //EditText editText = findViewById(R.id.editText);
-           //String result = Weather.getWeather();
-            //textViewDegree.setText(result);
 
-           // TextView textViewDegree = findViewById(R.id.degree);
-           // String result = Weather.getWeather();
-           // textViewDegree.setText(result);
-            //Fragment frag = getSupportFragmentManager().findFragmentById(R.id.fragment1_place);
-           // ((TextView)frag.getView().findViewById(R.id.degree_fragment)).setText("test");
         }
     };
 
