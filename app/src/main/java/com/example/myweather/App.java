@@ -17,7 +17,7 @@ public class App extends Application {
         super.onCreate();
 
         retrofit = new Retrofit.Builder()
-                .baseUrl("http://api.apixu.com")
+                .baseUrl(Constants.API_BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
         retrofitRequest = retrofit.create(RetrofitRequest.class);

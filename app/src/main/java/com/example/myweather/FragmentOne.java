@@ -12,18 +12,14 @@ import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.text.InputType;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
-
 import com.example.myweather.POJO.PostModel;
 import com.google.gson.Gson;
-
-import java.util.ArrayList;
-import java.util.List;
-
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -42,12 +38,12 @@ public class FragmentOne extends Fragment {
     private ImageButton imageButton;
     private static String text;
     private String iconUrl;
-    private String searchCity = "Saint-Petersburg";
+    private String searchCity = Constants.DEFAULT_CITY;
     private PostModel postModel;
     ProgressDialog progressDialog;
 
 
-    List<PostModel> posts;
+
     Handler handler;
 
     public FragmentOne() {
@@ -74,7 +70,17 @@ public class FragmentOne extends Fragment {
             }
         });
 
-        posts = new ArrayList<>();
+        rootView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                int motionEvent = event.getAction();
+                if (event.getAction() == MotionEvent.ACTION_MOVE){
+                    getWeather(searchCity);
+                }
+                return true;
+            }
+        });
+
         return rootView;
     }
 
@@ -95,39 +101,37 @@ public class FragmentOne extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        preloadWeather();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        savePostModel();
     }
 
     @Override
     public void onStop() {
         super.onStop();
+        savePostModel();
+    }
 
+    private void savePostModel() {
         String json = new Gson().toJson(postModel);
 
         SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(getContext()).edit();
-        editor.putString("lastToday", json.toString());
+        editor.putString("lastCheck", json.toString());
         editor.commit();
     }
 
-    private void updateWeatherOnStart() {
-        try {if (weatherToday.getCountry().isEmpty()){
-            preloadWeather();
-            return;
-        }
-
-        } catch (Exception e){
-            preloadWeather();
-            return;
-        }
-
-    }
 
     private void preloadWeather() {
         /*
         Проверяем сохранены ли у нас данные в формате Json
          */
        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getContext());
-       String lastToday = sp.getString("lastToday", "");
-       if (!lastToday.isEmpty()) {
+       String lastToday = sp.getString("lastCheck", "");
+       if (!(lastToday.isEmpty() || lastToday.equals("null"))) {
             postModel = new Gson().fromJson(lastToday, PostModel.class);
             setWeatherData(postModel);
             }
@@ -138,10 +142,9 @@ public class FragmentOne extends Fragment {
     }
 
     private void getWeather(String searchCity) {
-        App.getApi().getData("a79eb4cd14284cdfa1e141121190802", searchCity).enqueue(new Callback<PostModel>() {
+        App.getApi().getData(Constants.API_ID, searchCity).enqueue(new Callback<PostModel>() {
             @Override
             public void onResponse(Call<PostModel> call, Response<PostModel> response) {
-                // posts.addAll(response.body());
                 PostModel postModel = response.body();
                 setWeatherData(postModel);
 
@@ -165,6 +168,8 @@ public class FragmentOne extends Fragment {
         textView_Humidity.setText("Влажность " + postModel.getCurrent().getHumidity().toString() + "%");
         textView_wind.setText("Скорость ветра " + postModel.getCurrent().getWindKph().toString() + " км/ч");
         textView_fragment_degree.setText(postModel.getCurrent().getTempC().toString());
+
+        savePostModel();
     }
 
 
@@ -182,9 +187,9 @@ public class FragmentOne extends Fragment {
         alert.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                String result = input.getText().toString();
-                if (!result.isEmpty()){
-                    getWeather(result);
+                searchCity = input.getText().toString();
+                if (!searchCity.isEmpty()){
+                    getWeather(searchCity);
                 }
             }
         });
